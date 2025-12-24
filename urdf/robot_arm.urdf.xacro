@@ -1,0 +1,229 @@
+<?xml version="1.0"?>
+<robot name="phobos_robot_arm" version="1.0">
+
+  <link name="world"/>
+
+  <link name="base_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/> <geometry>
+        <mesh filename="package://rk_demo/meshes/1_base.STL" scale="1 1 1"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://rk_demo/meshes/1_base.STL" scale="1 1 1"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="2.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.1" iyy="0.1" izz="0.1" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+  
+  <joint name="world_to_base" type="fixed">
+    <parent link="world"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+  
+  <link name="rotary_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/> <geometry>
+        <mesh filename="package://rk_demo/meshes/2_rotary_joint.STL" scale="1 1 1"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://rk_demo/meshes/2_rotary_joint.STL" scale="1 1 1"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="1.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+
+  <joint name="base_to_rotary" type="revolute">
+    <limit lower="-3.14" upper="3.14" effort="100.0" velocity="10.0"/>
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <parent link="base_link"/>
+    <child link="rotary_link"/>
+    <axis xyz="0 0 1"/>
+    <dynamics friction="0.5" damping="2" />
+  </joint> 
+
+  <link name="lower_arm_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 1.5708 0"/> <geometry>
+        <mesh filename="package://rk_demo/meshes/4_lower_arm.STL" scale="1 1 1"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://rk_demo/meshes/4_lower_arm.STL" scale="1 1 1"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="1.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+
+  <joint name="rotary_to_lower" type="revolute">
+    <limit lower="-3.14" upper="3.14" effort="100.0" velocity="10.0"/>
+    <origin rpy="-0.17453 -1.57080 0.00000" xyz="0.06000 0.26000 0.64000"/>
+    <parent link="rotary_link"/>
+    <child link="lower_arm_link"/>
+    <axis xyz="0 0 1"/>
+    <dynamics friction="0.5" damping="2" />
+  </joint> 
+
+  <link name="upper_arm_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 1.5708 0"/> <geometry>
+        <mesh filename="package://rk_demo/meshes/5_upper_arm.STL" scale="1 1 1"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://rk_demo/meshes/5_upper_arm.STL" scale="1 1 1"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="1.0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+
+  <joint name="lower_to_upper" type="revolute">
+    <limit lower="-3.14" upper="3.14" effort="100.0" velocity="10.0"/>
+    <origin rpy="0 0 0" xyz="0.44000 0.48717 -0.05626"/>
+    <parent link="lower_arm_link"/>
+    <child link="upper_arm_link"/>
+    <axis xyz="0 0 1"/>
+    <dynamics friction="0.5" damping="2" />
+  </joint>
+
+  <link name="wrist_support_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="3.14159 -1.5708 1.5708"/> <geometry>
+        <mesh filename="package://rk_demo/meshes/6_wrist_support.STL" scale="1 1 1"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://rk_demo/meshes/6_wrist_support.STL" scale="1 1 1"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.5"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.005" iyy="0.005" izz="0.005" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+
+  <joint name="upper_to_support" type="revolute">
+    <limit lower="-3.14" upper="3.14" effort="100.0" velocity="10.0"/>
+    <origin rpy="0.01066 0.08661 1.69343" xyz="-0.05000 0.52078 0.04106"/>
+    <parent link="upper_arm_link"/>
+    <child link="wrist_support_link"/>
+    <axis xyz="0.99714 0 0.07554"/>
+    <dynamics friction="0.5" damping="2" />
+  </joint>
+
+  <link name="wrist_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/> <geometry>
+        <mesh filename="package://rk_demo/meshes/7_wrist.STL" scale="1 1 1"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://rk_demo/meshes/7_wrist.STL" scale="1 1 1"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.5"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="0.005" iyy="0.005" izz="0.005" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+
+  <joint name="support_to_wrist" type="revolute">
+    <limit lower="-3.14" upper="3.14" effort="100.0" velocity="10.0"/>
+    <origin rpy="1.57080 1.48353 -0.12217" xyz="0.16404 0.00001 0.12645"/>
+    <parent link="wrist_support_link"/>
+    <child link="wrist_link"/>
+    <axis xyz="0.99714 0 0.07554"/>
+    <dynamics friction="0.5" damping="2" />
+  </joint>
+
+  <link name="end_effector">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.01 0.01 0.01"/>
+      </geometry>
+    </visual>
+  </link>
+
+  <joint name="wrist_to_end" type="fixed">
+    <parent link="wrist_link"/>
+    <child link="end_effector"/>
+    <origin xyz="0 0 0.05" rpy="0 0 0"/>
+  </joint>
+
+  <ros2_control name="gazebo_system" type="system">
+    <hardware>
+        <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+    </hardware>
+    <joint name="base_to_rotary">
+        <command_interface name="position"/>
+        <state_interface name="position"/>
+        <state_interface name="velocity"/>
+    </joint>
+    <joint name="rotary_to_lower">
+        <command_interface name="position"/>
+        <state_interface name="position"/>
+        <state_interface name="velocity"/>
+    </joint>
+    <joint name="lower_to_upper">
+        <command_interface name="position"/>
+        <state_interface name="position"/>
+        <state_interface name="velocity"/>
+    </joint>
+    <joint name="upper_to_support">
+        <command_interface name="position"/>
+        <state_interface name="position"/>
+        <state_interface name="velocity"/>
+    </joint>
+    <joint name="support_to_wrist">
+        <command_interface name="position"/>
+        <state_interface name="position"/>
+        <state_interface name="velocity"/>
+    </joint>
+    <!-- <joint name="wrist_to_end">
+        <command_interface name="position"/>
+        <state_interface name="position"/>
+        <state_interface name="velocity"/>0
+    </joint> -->
+
+  </ros2_control>
+
+  <gazebo>
+    <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+      <parameters>$(find rk_demo)/config/ros2_controllers.yaml</parameters>
+    </plugin>
+  </gazebo>
+  
+</robot>
