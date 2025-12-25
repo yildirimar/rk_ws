@@ -35,6 +35,7 @@ setup(
             'fk_node = rk_demo.fk_node:main',
             'slider_node = rk_demo.slider_gui:main',
             'arm_ui = rk_demo.arm_ui:main',
+            'ik_node = rk_demo.ik_node:main',
         ],
     },
 )
