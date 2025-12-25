@@ -3,43 +3,102 @@ import sys
 import rclpy
 from rclpy.node import Node
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QSlider, QPushButton
-from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QSlider, QPushButton, QFrame
+from PyQt5.QtCore import Qt, QTimer
+
+# TF (Transform) Dinlemek için gerekli kütüphaneler
+from tf2_ros import Buffer, TransformListener
+import rclpy.time
 
 class RobotArmUI(QWidget):
     def __init__(self, node):
         super().__init__()
         
-        # We use the node passed from main(), we do NOT create a new one or init rclpy here
+        # ROS Node'u alıyoruz
         self.node = node
         
-        # Create Publisher
+        # Publisher (Robotu hareket ettirmek için)
         self.publisher = self.node.create_publisher(
             JointTrajectory, 
             '/joint_trajectory_controller/joint_trajectory', 
             10
         )
         
-        # YOUR ROBOT JOINT NAMES
+        # --- TF LISTENER (FK Node'dan gelen veriyi okumak için) ---
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self.node)
+
+        # --- ROS SPIN TIMER ---
+        # GUI'nin donmaması için ROS işlemlerini (spin) bir Timer ile yapıyoruz.
+        self.ros_timer = QTimer()
+        self.ros_timer.timeout.connect(self.spin_ros_node)
+        self.ros_timer.start(20) # 20ms'de bir (50 Hz) ROS verilerini kontrol et
+
+        # --- GUI UPDATE TIMER ---
+        # Ekrandaki X,Y,Z yazısını güncellemek için ayrı bir timer
+        self.display_timer = QTimer()
+        self.display_timer.timeout.connect(self.update_xyz_display)
+        self.display_timer.start(100) # 100ms'de bir (10 Hz) ekranı yenile
+
+        # Robot Eklem İsimleri
         self.joint_names = [
             'base_to_rotary',   # Joint 1
             'rotary_to_lower',  # Joint 2
-            'lower_to_upper' ,   # Joint 3
-            'upper_to_support',  # Joint 4
-            'support_to_wrist',  # Joint 5
+            'lower_to_upper' ,  # Joint 3
+            'upper_to_support', # Joint 4
+            'support_to_wrist', # Joint 5
         ]
         
         self.init_ui()
 
+    def spin_ros_node(self):
+        """ROS callback'lerini (TF verisi vb.) işler"""
+        rclpy.spin_once(self.node, timeout_sec=0.0)
+
+    def update_xyz_display(self):
+        """FK Node tarafından yayınlanan konumu okur ve ekrana yazar"""
+        try:
+            # 'base_link' referansına göre 'fk_end_effector' konumunu soruyoruz
+            # Time() parametresi '0' anlamına gelir, yani en son mevcut veriyi getirir.
+            now = rclpy.time.Time()
+            trans = self.tf_buffer.lookup_transform(
+                'base_link', 
+                'fk_end_effector', 
+                now
+            )
+            
+            x = trans.transform.translation.x
+            y = trans.transform.translation.y
+            z = trans.transform.translation.z
+            
+            self.xyz_label.setText(f"📍 End Effector Position\nX: {x:.3f} m\nY: {y:.3f} m\nZ: {z:.3f} m")
+            self.xyz_label.setStyleSheet("background-color: #27ae60; color: white; font-size: 14px; font-weight: bold; padding: 10px; border-radius: 5px;")
+
+        except Exception as e:
+            # Henüz veri gelmediyse veya FK Node çalışmıyorsa
+            self.xyz_label.setText("Waiting for FK Node...\n(Is fk_node running?)")
+            self.xyz_label.setStyleSheet("background-color: #e74c3c; color: white; font-size: 14px; font-weight: bold; padding: 10px; border-radius: 5px;")
+
     def init_ui(self):
         self.setWindowTitle("KUKA Robot Control Panel 🚀")
-        self.setGeometry(100, 100, 400, 300)
+        self.setGeometry(100, 100, 450, 500)
         layout = QVBoxLayout()
+
+        # --- XYZ DISPLAY (YENİ EKLENEN KISIM) ---
+        self.xyz_label = QLabel("Initializing...")
+        self.xyz_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.xyz_label)
+        
+        # Ayırıcı Çizgi
+        line = QFrame()
+        line.setFrameShape(QFrame.HLine)
+        line.setFrameShadow(QFrame.Sunken)
+        layout.addWidget(line)
 
         self.sliders = []
         self.labels = []
 
-        # UI Elements for 3 Joints
+        # UI Elements for Joints
         joint_titles = ["Base (Rotate)", "Rotary", "Lower" , "Upper", "Support"]
         
         for i, name in enumerate(joint_titles):
@@ -61,12 +120,13 @@ class RobotArmUI(QWidget):
         # Send Button
         btn = QPushButton("MOVE (SEND)")
         btn.clicked.connect(self.send_command)
-        btn.setStyleSheet("background-color: green; color: white; font-weight: bold; padding: 10px;")
+        btn.setStyleSheet("background-color: #2980b9; color: white; font-weight: bold; padding: 10px; margin-top: 10px;")
         layout.addWidget(btn)
         
         # Reset Button
         btn_reset = QPushButton("RESET (HOME)")
         btn_reset.clicked.connect(self.reset_positions)
+        btn_reset.setStyleSheet("padding: 5px;")
         layout.addWidget(btn_reset)
 
         self.setLayout(layout)
